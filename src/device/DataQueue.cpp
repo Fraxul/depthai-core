@@ -172,11 +172,11 @@ bool DataOutputQueue::removeCallback(int callbackId) {
 // DATA INPUT QUEUE
 DataInputQueue::DataInputQueue(
     const std::shared_ptr<XLinkConnection> conn, const std::string& streamName, unsigned int maxSize, bool blocking, std::size_t maxDataSize)
-    : queue(maxSize, blocking), name(streamName), maxDataSize(maxDataSize) {
+    : queue(maxSize, blocking), name(streamName), maxDataSize(maxDataSize),
     // open stream with default XLINK_USB_BUFFER_MAX_SIZE write size
-    XLinkStream stream(std::move(conn), name, maxDataSize + device::XLINK_MESSAGE_METADATA_MAX_SIZE);
+    stream(std::move(conn), name, maxDataSize + device::XLINK_MESSAGE_METADATA_MAX_SIZE)  {
 
-    writingThread = std::thread([this, stream = std::move(stream)]() mutable {
+    writingThread = std::thread([this]() mutable {
         std::uint64_t numPacketsSent = 0;
         try {
             while(running) {
@@ -214,10 +214,22 @@ DataInputQueue::DataInputQueue(
         } catch(const std::exception& ex) {
             exceptionMessage = fmt::format("Communication exception - possible device error/misconfiguration. Original message '{}'", ex.what());
         }
-
-        // Close the queue
-        close();
     });
+}
+
+
+void DataInputQueue::takeStreamOwnership() {
+    // Set writing thread to stop and allow to be closed only once
+    if(!running.exchange(false)) return;
+
+    // Destroy queue
+    queue.destruct();
+
+    // Then join thread
+    if((writingThread.get_id() != std::this_thread::get_id()) && writingThread.joinable()) writingThread.join();
+
+    // Leave a message in case someone calls read/write afterwards
+    exceptionMessage = std::string("takeStreamOwnership() was called, the read/write methods cannot be called on this Queue anymore");
 }
 
 bool DataInputQueue::isClosed() const {

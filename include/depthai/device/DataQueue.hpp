@@ -9,6 +9,7 @@
 #include "depthai/pipeline/datatype/ADatatype.hpp"
 #include "depthai/utility/LockingQueue.hpp"
 #include "depthai/xlink/XLinkConnection.hpp"
+#include "depthai/xlink/XLinkStream.hpp"
 
 // shared
 #include "depthai-shared/datatype/RawBuffer.hpp"
@@ -344,6 +345,7 @@ class DataInputQueue {
     std::string exceptionMessage;
     const std::string name;
     std::size_t maxDataSize = device::XLINK_USB_BUFFER_MAX_SIZE;
+    XLinkStream stream;
 
    public:
     DataInputQueue(const std::shared_ptr<XLinkConnection> conn,
@@ -352,6 +354,10 @@ class DataInputQueue {
                    bool blocking = true,
                    std::size_t maxDataSize = device::XLINK_USB_BUFFER_MAX_SIZE);
     ~DataInputQueue();
+
+
+    XLinkStream& xlinkStream() { return stream; }
+    void takeStreamOwnership(); // terminate worker thread so application can use the stream directly
 
     /**
      * Check whether queue is closed

@@ -49,6 +49,9 @@ class XLinkStream {
     XLinkStream& operator=(XLinkStream&& stream);
     ~XLinkStream();
 
+    std::uint8_t* allocateDMABuffer(std::uint32_t& inOutSize);
+    void deallocateDMABuffer(std::uint8_t* buffer, std::uint32_t size);
+
     // Blocking
     void write(const void* data, std::size_t size);
     void write(const std::uint8_t* data, std::size_t size);

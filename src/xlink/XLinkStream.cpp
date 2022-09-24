@@ -71,6 +71,17 @@ StreamPacketDesc::~StreamPacketDesc() noexcept {
     XLinkDeallocateMoveData(data, length);
 }
 
+std::uint8_t* XLinkStream::allocateDMABuffer(std::uint32_t& inOutSize) {
+    std::uint8_t* res = nullptr;
+    if (XLinkAllocateDMABuffer(streamId, inOutSize, &res, &inOutSize) != X_LINK_SUCCESS)
+        throw std::runtime_error("Couldn't allocate DMA buffer");
+    return res;
+}
+
+void XLinkStream::deallocateDMABuffer(std::uint8_t* buffer, std::uint32_t size) {
+    XLinkDeallocateDMABuffer(streamId, buffer, size);
+}
+
 ////////////////////
 // BLOCKING VERSIONS
 ////////////////////
